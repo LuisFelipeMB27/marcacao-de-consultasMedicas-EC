@@ -8,65 +8,63 @@ import theme from '../styles/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appointment } from '../types/appointments';
-import { Doctor } from '../types/doctors';
 import { RootStackParamList } from '../types/navigation';
 import { useFocusEffect } from '@react-navigation/native';
+import { authApiService } from '../services/authApi';
+import { User } from '../types/auth';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 };
 
-const doctors: Doctor[] = [
-  {
-    id: '1',
-    name: 'Dr. João Silva',
-    specialty: 'Cardiologista',
-    image: 'https://mighty.tools/mockmind-api/content/human/91.jpg',
-  },
-  {
-    id: '2',
-    name: 'Dra. Maria Santos',
-    specialty: 'Dermatologista',
-    image: 'https://mighty.tools/mockmind-api/content/human/97.jpg',
-  },
-  {
-    id: '3',
-    name: 'Dr. Pedro Oliveira',
-    specialty: 'Oftalmologista',
-    image: 'https://mighty.tools/mockmind-api/content/human/79.jpg',
-  },
-];
+// IMPORTAÇÕES da API real
+import { authApiService } from '../services/authApi';
+import { User } from '../types/auth';
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+// ESTADO para médicos da API
+const [doctors, setDoctors] = useState<User[]>([]);
 
-  const loadAppointments = async () => {
-    try {
-      const storedAppointments = await AsyncStorage.getItem('appointments');
-      if (storedAppointments) {
-        setAppointments(JSON.parse(storedAppointments));
-      }
-    } catch (error) {
-      console.error('Erro ao carregar consultas:', error);
-    }
-  };
+// FUNÇÃO para carregar médicos da API
+const loadDoctors = async () => {
+  try {
+    const doctorsData = await authApiService.getAllDoctors();
+    setDoctors(doctorsData);
+  } catch (error) {
+    console.error('Erro ao carregar médicos:', error);
+  }
+};
 
-  useFocusEffect(
-    React.useCallback(() => {
-      loadAppointments();
-    }, [])
+// CARREGAMENTO automático
+useFocusEffect(
+  React.useCallback(() => {
+    loadAppointments();
+    loadDoctors(); // Carrega médicos da API
+  }, [])
+);
+
+// BUSCA em dados reais
+const getDoctorInfo = (doctorId: string): User | undefined => {
+  return doctors.find(doctor => doctor.id === doctorId);
+};
+
+// RENDERIZAÇÃO com dados reais
+const renderAppointment = ({ item }: { item: Appointment }) => {
+  const doctor = getDoctorInfo(item.doctorId);
+
+  return (
+    <AppointmentCard>
+      <DoctorImage source={{ uri: doctor?.image || 'https://via.placeholder.com/100' }} />
+      <InfoContainer>
+        <DoctorName>{doctor?.name || 'Médico não encontrado'}</DoctorName>
+        <DoctorSpecialty>
+          {doctor?.role === 'doctor' && 'specialty' in doctor
+            ? doctor.specialty
+            : 'Especialidade não encontrada'}
+        </DoctorSpecialty>
+      </InfoContainer>
+    </AppointmentCard>
   );
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadAppointments();
-    setRefreshing(false);
-  };
-
-  const getDoctorInfo = (doctorId: string): Doctor | undefined => {
-    return doctors.find(doctor => doctor.id === doctorId);
-  };
+};
 
   const renderAppointment = ({ item }: { item: Appointment }) => {
     const doctor = getDoctorInfo(item.doctorId);

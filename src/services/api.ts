@@ -5,7 +5,6 @@
 // URL base da API do backend
 export const API_BASE_URL = 'http://localhost:8080';
 
-// Endpoints da API
 export const API_ENDPOINTS = {
   // Autenticação
   LOGIN: '/usuarios/login',
@@ -15,6 +14,7 @@ export const API_ENDPOINTS = {
   // Usuários
   USERS: '/usuarios',
   DOCTORS: '/usuarios/medicos',
+  CHANGE_PASSWORD: '/usuarios',  // NOVO ENDPOINT
 
   // Especialidades
   SPECIALTIES: '/especialidades',
